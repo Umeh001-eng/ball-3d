@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -402,7 +400,10 @@ const $=id=>document.getElementById(id);
 
 const LANES=[-3.25,0,3.25],R=.36;
 
+
 let scene,camera,renderer,ball;
+let ballTrail = [];
+
 
 let roads=[],buildings=[],lamps=[],palms=[],waves=[],coinRows=[],enemies=[];
 
@@ -414,6 +415,11 @@ let targetX=0,jumpVelocity=0,jumping=false,landingBounce=0;
 
 let leftHeld=false,rightHeld=false,lastTime=0;
 
+let airJumpUsed = false;
+let ballEffectTime = 0;
+let ballEffectStrength = 0;
+
+
 let pointerStart=null,lastPointerX=0;
 
 let audioCtx=null,musicTimer=null,musicStep=0;
@@ -424,19 +430,75 @@ let powerUps=[],shieldActive=false,shieldTime=0,speedBoostTime=0,magnetTime=0;
 
 /* BALL SHOP: persistent local wallet and owned balls */
 
-const BALL_SHOP_ITEMS=[
 
- {id:'chrome',name:'Chrome Ball',price:500,color:'#cbd5e1',effect:'Silver shine'},
-
- {id:'thunder',name:'Thunder Ball',price:2000,color:'#38bdf8',effect:'Electric blue glow'},
-
- {id:'inferno',name:'Inferno Ball',price:5000,color:'#fb923c',effect:'Fiery orange glow'},
-
- {id:'galaxy',name:'Galaxy Ball',price:10000,color:'#c084fc',effect:'Cosmic purple glow'},
-
- {id:'royal',name:'Royal Gold Ball',price:25000,color:'#facc15',effect:'Golden shine'}
-
+const BALL_SHOP_ITEMS = [
+  {
+    id: 'chrome',
+    name: 'Silver Phantom',
+    price: 500,
+    color: '#cbd5e1',
+    effect: 'Quick rebound • Silver shine',
+    rarity: 'COMMON',
+    power: 1,
+    jumpPower: 7.1,
+    bounceBoost: 1,
+    doubleJump: false,
+    glow: 0.08
+  },
+  {
+    id: 'thunder',
+    name: 'Thunder Bolt',
+    price: 2000,
+    color: '#38bdf8',
+    effect: 'High jump • Electric trail',
+    rarity: 'RARE',
+    power: 2,
+    jumpPower: 8.7,
+    bounceBoost: 1.2,
+    doubleJump: false,
+    glow: 0.9
+  },
+  {
+    id: 'inferno',
+    name: 'Inferno Beast',
+    price: 5000,
+    color: '#fb642b',
+    effect: 'Power bounce • Lava glow',
+    rarity: 'EPIC',
+    power: 3,
+    jumpPower: 10.2,
+    bounceBoost: 1.45,
+    doubleJump: false,
+    glow: 1.25
+  },
+  {
+    id: 'galaxy',
+    name: 'Galaxy Titan',
+    price: 10000,
+    color: '#c084fc',
+    effect: 'Mega jump • Cosmic effect',
+    rarity: 'LEGENDARY',
+    power: 4,
+    jumpPower: 11.8,
+    bounceBoost: 1.7,
+    doubleJump: false,
+    glow: 1.5
+  },
+  {
+    id: 'royal',
+    name: 'Godspeed Infinity',
+    price: 25000,
+    color: '#facc15',
+    effect: 'Extreme jump • Double jump',
+    rarity: 'MYTHIC',
+    power: 5,
+    jumpPower: 13.5,
+    bounceBoost: 2,
+    doubleJump: true,
+    glow: 1.8
+  }
 ];
+
 
 const BALL_SAVE_KEY='bounceBallShopSave_v1';
 
@@ -470,43 +532,81 @@ function saveBallShopSave(){try{localStorage.setItem(BALL_SAVE_KEY,JSON.stringif
 
 function updateBallWallet(){const wallet=$('walletCoins');if(wallet)wallet.textContent=ballShopSave.coins.toLocaleString();}
 
-function renderBallShop(){
 
- const list=$('ballShopItems');if(!list)return;
+function renderBallShop() {
+  const container = document.getElementById('ballShopItems');
+  if (!container) return;
 
- list.innerHTML='';
+  container.innerHTML = '';
 
- BALL_SHOP_ITEMS.forEach(item=>{
+  BALL_SHOP_ITEMS.forEach(item => {
+    const owned = ballShopSave.owned.includes(item.id);
+    const equipped = ballShopSave.equipped === item.id;
+    const canAfford = ballShopSave.coins >= item.price;
 
-  const unlocked=ballShopSave.unlocked.includes(item.id),equipped=ballShopSave.equipped===item.id;
+    const card = document.createElement('div');
+    card.className = 'ball-shop-card';
 
-  const card=document.createElement('div');card.className='ballShopItem';
+    card.innerHTML = `
+      <div class="shop-ball-preview"
+        style="
+          background:
+            radial-gradient(circle at 30% 25%,
+              #ffffff 0%,
+              ${item.color} 25%,
+              #111827 100%);
+          box-shadow: 0 0 ${8 + item.power * 5}px ${item.color};
+        ">
+        <span></span>
+      </div>
 
-  const preview=document.createElement('div');preview.className='ballPreview';
+      <div class="shop-ball-info">
+        <div class="shop-rarity rarity-${item.rarity.toLowerCase()}">
+          ${item.rarity}
+        </div>
 
-  preview.style.background='radial-gradient(circle at 30% 25%,white,'+item.color+' 42%,#111827 100%)';
+        <h3>${item.name}</h3>
 
-  preview.style.boxShadow='0 0 18px '+item.color;card.appendChild(preview);
+        <p>${item.effect}</p>
 
-  const title=document.createElement('h3');title.textContent=item.name;card.appendChild(title);
+        <div class="shop-power">
+          ${'★'.repeat(item.power)}${'☆'.repeat(5 - item.power)}
+        </div>
 
-  const price=document.createElement('p');price.textContent=item.price.toLocaleString()+' coins';card.appendChild(price);
+        <div class="shop-price">
+          🪙 ${item.price.toLocaleString()}
+        </div>
 
-  const effect=document.createElement('p');effect.textContent=item.effect;card.appendChild(effect);
+        <button class="shop-action">
+          ${
+            equipped
+              ? 'EQUIPPED'
+              : owned
+                ? 'EQUIP BALL'
+                : canAfford
+                  ? 'BUY BALL'
+                  : 'NOT ENOUGH COINS'
+          }
+        </button>
+      </div>
+    `;
 
-  const button=document.createElement('button');
+    const button = card.querySelector('.shop-action');
 
-  if(equipped){button.textContent='EQUIPPED';button.disabled=true;}
+    button.disabled = equipped || (!owned && !canAfford);
 
-  else if(unlocked){button.textContent='EQUIP';button.addEventListener('click',()=>equipShopBall(item.id));}
+    button.addEventListener('click', () => {
+      if (owned) {
+        equipShopBall(item.id);
+      } else {
+        buyShopBall(item.id);
+      }
+    });
 
-  else{button.textContent=ballShopSave.coins>=item.price?'BUY':'NEED MORE COINS';button.disabled=ballShopSave.coins<item.price;button.addEventListener('click',()=>buyShopBall(item.id));}
+    container.appendChild(card);
+  });
 
-  card.appendChild(button);list.appendChild(card);
-
- });
-
- updateBallWallet();
+  updateBallWallet();
 
 }
 
@@ -552,24 +652,55 @@ function equipShopBall(id){
 
 }
 
-function applyEquippedBall(){
 
- if(!ball)return;
+function applyEquippedBall() {
+  const item = BALL_SHOP_ITEMS.find(
+    ballItem => ballItem.id === ballShopSave.equipped
+  ) || BALL_SHOP_ITEMS[0];
 
- const item=BALL_SHOP_ITEMS.find(b=>b.id===ballShopSave.equipped);
+  if (ball && ball.material) {
+    ball.material.color.set(item.color);
+    ball.material.metalness = Math.min(0.95, 0.35 + item.power * 0.12);
+    ball.material.roughness = Math.max(0.12, 0.3 - item.power * 0.025);
 
- if(!item)return;
+    if (ball.material.clearcoat !== undefined) {
+      ball.material.clearcoat = 0.65 + item.power * 0.06;
+    }
 
- ball.material.color.set(item.color);
+    if (ball.material.emissive) {
+      ball.material.emissive.set(item.color);
+      ball.material.emissiveIntensity = item.glow;
+    }
 
- ball.material.metalness=(item.id==='chrome'||item.id==='royal')?0.8:0.25;
+    ball.material.needsUpdate = true;
+  }
 
- ball.material.roughness=item.id==='inferno'?0.3:0.18;
+  document.documentElement.style.setProperty(
+    '--equipped-color',
+    item.color
+  );
 
- ball.material.emissive.set(item.color);
+  const hint = document.getElementById('bottomHint');
 
- ball.material.emissiveIntensity=item.id==='chrome'?0.05:item.id==='thunder'?0.65:item.id==='inferno'?0.8:item.id==='galaxy'?0.7:0.55;
+  if (hint) {
+    hint.textContent = item.doubleJump
+      ? 'MYTHIC BALL • EXTREME JUMP • DOUBLE JUMP'
+      : item.rarity + ' BALL • ' + item.effect.toUpperCase();
+  }
 
+  if (typeof ballTrail !== 'undefined' && ballTrail.length) {
+    ballTrail.forEach(particle => {
+      if (particle.material && particle.material.color) {
+        particle.material.color.set(item.color);
+      }
+    });
+  }
+}
+
+function getEquippedBall() {
+  return BALL_SHOP_ITEMS.find(
+    item => item.id === ballShopSave.equipped
+  ) || BALL_SHOP_ITEMS[0];
 }
 
 loadBallShopSave();
@@ -820,6 +951,31 @@ function createBall(){
 
  ball.userData.shadow.rotation.x=-Math.PI/2;ball.userData.shadow.scale.set(.52,.34,1);
 
+
+ballTrail = [];
+
+for (let i = 0; i < 5; i++) {
+  const trailMaterial = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false
+  });
+
+  const particle = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      Math.max(0.045, 0.11 - i * 0.012),
+      10,
+      8
+    ),
+    trailMaterial
+  );
+
+  particle.visible = false;
+  scene.add(particle);
+  ballTrail.push(particle);
+}
+
 }
 
 function makeEnemyModel(){
@@ -918,16 +1074,38 @@ function loseLife(fromEnemy=false){
 
 }
 
-function jump(){if(!running||jumping||invulnerable>0)return;jumping=true;landingBounce=0;jumpVelocity=7.1;tone(500,.09,'sine',.04);}
 
-function collectCoin(c){
+function jump() {
+  if (!running || invulnerable > 0) return;
 
- if(c.taken)return;c.taken=true;c.mesh.visible=false;coinCount++;
+  const item = getEquippedBall();
 
- ballShopSave.coins++;saveBallShopSave();updateBallWallet();
+  // Special double jump for Godspeed Infinity
+  if (jumping) {
+    if (!item.doubleJump || airJumpUsed) return;
 
- tone(880,.07,'sine',.04);updateHUD();
+    airJumpUsed = true;
+    jumpVelocity = item.jumpPower * 0.78;
+    ballEffectTime = 0.45;
+    ballEffectStrength = item.power;
 
+    tone(1050, 0.16, 'triangle', 0.06);
+    return;
+  }
+
+  jumping = true;
+  landingBounce = 0;
+  airJumpUsed = false;
+  jumpVelocity = item.jumpPower;
+  ballEffectTime = 0.3;
+  ballEffectStrength = item.power;
+
+  tone(
+    item.power >= 4 ? 800 : 500,
+    0.1,
+    item.power >= 3 ? 'triangle' : 'sine',
+    0.04
+  );
 }
 
 function resetGame(){
@@ -1004,11 +1182,47 @@ function update(dt){
 
  targetX=THREE.MathUtils.clamp(targetX,-4.35,4.35);ball.position.x+=(targetX-ball.position.x)*Math.min(1,dt*13);
 
- if(jumping){ball.position.y+=jumpVelocity*dt;jumpVelocity-=19*dt;if(ball.position.y<=R&&jumpVelocity<0){ball.position.y=R;jumping=false;jumpVelocity=0;landingBounce=1;tone(150,.07,'sine',.025);}}
 
- else if(landingBounce>0){landingBounce=Math.max(0,landingBounce-dt*3.7);ball.position.y=R+Math.sin((1-landingBounce)*Math.PI)*.22*landingBounce;}
+if (jumping) {
+  ball.position.y += jumpVelocity * dt;
+  jumpVelocity -= 19 * dt;
 
- else ball.position.y=R+Math.abs(Math.sin(performance.now()*.012))*.025;
+  if (ball.position.y <= R && jumpVelocity < 0) {
+    ball.position.y = R;
+    jumping = false;
+    jumpVelocity = 0;
+    airJumpUsed = false;
+
+    const item = getEquippedBall();
+
+    landingBounce = 1;
+    ballEffectTime = 0.25 + item.power * 0.09;
+    ballEffectStrength = item.power;
+
+    tone(
+      150 + item.power * 65,
+      0.08,
+      item.power >= 3 ? 'triangle' : 'sine',
+      0.025 + item.power * 0.004
+    );
+  }
+}
+else if (landingBounce > 0) {
+  const item = getEquippedBall();
+
+  landingBounce = Math.max(0, landingBounce - dt * 3.7);
+
+  ball.position.y = R +
+    Math.max(
+      0,
+      Math.sin((1 - landingBounce) * Math.PI)
+    ) * 0.22 * item.bounceBoost;
+}
+else {
+  ball.position.y =
+    R + Math.abs(Math.sin(performance.now() * 0.012)) * 0.025;
+}
+
 
  if(jumping){const v=Math.min(1,Math.abs(jumpVelocity)/7.1);ball.scale.x=1+.08*v;ball.scale.y=1-.10*v;ball.scale.z=1+.08*v;}
 
@@ -1017,6 +1231,37 @@ function update(dt){
  if(ball.userData.shadow){const shadow=ball.userData.shadow,height=Math.max(0,ball.position.y-R),jumpAmount=Math.min(height/2,1);shadow.position.x=ball.position.x;shadow.position.z=ball.position.z;shadow.position.y=.025;shadow.material.opacity=.28-jumpAmount*.20;const size=1+jumpAmount*.45;shadow.scale.set(.52*size,.34*size,1);}
 
  ball.rotation.x-=speed*dt;ball.rotation.z=THREE.MathUtils.clamp((targetX-ball.position.x)*-.18,-.35,.35);
+
+ballEffectTime = Math.max(0, ballEffectTime - dt);
+
+const equippedTrailBall = getEquippedBall();
+
+ballTrail.forEach((particle, i) => {
+  const active =
+    ballEffectTime > 0 || equippedTrailBall.power >= 2;
+
+  particle.visible = active;
+
+  if (!active) {
+    particle.material.opacity = 0;
+    return;
+  }
+
+  const trailFactor = (i + 1) / ballTrail.length;
+  const energy = Math.min(
+    1,
+    equippedTrailBall.power * 0.17 + ballEffectTime * 0.8
+  );
+
+  particle.position.set(
+    ball.position.x,
+    Math.max(R * 0.4, ball.position.y - trailFactor * 0.08),
+    ball.position.z + 0.38 + i * 0.23
+  );
+
+  particle.material.opacity =
+    energy * (1 - trailFactor) * 0.8;
+});
 
  ball.visible=invulnerable<=0||Math.floor(performance.now()/160)%2===0;
 
