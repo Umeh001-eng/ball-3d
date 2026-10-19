@@ -128,6 +128,85 @@ body.impact-barrier{animation:barrierImpact .35s ease-out,redImpactFlash .45s ea
 
 @media(max-height:500px){#ballShopCard{max-height:98%;padding:10px}#ballShopItems{gap:6px}.ballPreview{width:38px;height:38px}.ballShopItem{padding:8px 6px}.ballShopItem h3{font-size:13px}}
 
+
+#ballShopItems {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.ball-shop-card {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 8px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: #111c35;
+  color: #ffffff;
+  min-width: 0;
+}
+
+.shop-ball-preview {
+  display: block !important;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid #ffffff55;
+  margin-bottom: 12px;
+}
+
+.shop-ball-info {
+  width: 100%;
+  text-align: center;
+}
+
+.shop-ball-info h3 {
+  color: #ffffff;
+  font-size: 15px;
+  margin: 8px 0;
+}
+
+.shop-ball-info p {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.shop-rarity {
+  font-size: 10px;
+  font-weight: bold;
+  color: #facc15;
+}
+
+.shop-power {
+  color: #facc15;
+  margin: 8px 0;
+}
+
+.shop-price {
+  color: #facc15;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.shop-action {
+  width: 100%;
+  padding: 10px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: #0284c7;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.shop-action:disabled {
+  opacity: 0.65;
+}
+
+
 </style>
 
 <style>
