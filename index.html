@@ -614,9 +614,13 @@ function updateBallWallet(){const wallet=$('walletCoins');if(wallet)wallet.textC
 
 function renderBallShop() {
   const container = document.getElementById('ballShopItems');
-  if (!container) return;
 
-  container.innerHTML = '';
+  if (!container) {
+    alert('ERROR: ballShopItems container not found!');
+    return;
+  }
+
+  container.innerHTML = '<h3 style="color:white">SHOP TEST WORKS</h3>';
 
   BALL_SHOP_ITEMS.forEach(item => {
     const owned = ballShopSave.owned.includes(item.id);
