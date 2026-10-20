@@ -242,7 +242,7 @@ const BALL_SHOP_ITEMS=[
 {id:'galaxy',name:'Galaxy Titan',price:400,color:'#c084fc',effect:'Mega jump • Cosmic effect',rarity:'LEGENDARY',power:4,jumpPower:11.8,bounceBoost:1.7,doubleJump:false,glow:.55},
 {id:'royal',name:'Godspeed Infinity',price:1000,color:'#facc15',effect:'Extreme jump • Double jump',rarity:'MYTHIC',power:5,jumpPower:13.5,bounceBoost:2,doubleJump:true,glow:.7}
 ];
-const BALL_SAVE_KEY='bounceBallShopSave_v1';
+const BALL_SAVE_KEY='bounceBallShopSave_v2';
 let ballShopSave={coins:0,unlocked:['chrome'],equipped:'chrome'};
 function loadBallShopSave(){
  try{
@@ -255,7 +255,13 @@ function loadBallShopSave(){
  }catch(e){}
 }
 function saveBallShopSave(){try{localStorage.setItem(BALL_SAVE_KEY,JSON.stringify(ballShopSave));}catch(e){}}
-function updateBallWallet(){if($('walletCoins'))$('walletCoins').textContent=ballShopSave.coins.toLocaleString();}
+function updateBallWallet(){
+  const wallet = Math.max(0, Math.floor(Number(ballShopSave.coins) || 0));
+
+  if ($('walletCoins')) {
+    $('walletCoins').textContent = wallet.toLocaleString();
+  }
+}
 function renderBallShop(){
  const container=$('ballShopItems');if(!container)return;container.innerHTML='';
  BALL_SHOP_ITEMS.forEach(item=>{
