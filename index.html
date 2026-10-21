@@ -1348,7 +1348,7 @@ window.addEventListener('resize',()=>{
 
  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
 
- renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);
+ renderer.setPixelRatio(Math.min(bdevicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);
 
 });
 
@@ -1357,6 +1357,48 @@ init();bindControls();updateHUD();updateBallWallet();animate();
 })();
 
 </script>
+
+<!-- Smart Apps Pro: Legal links -->
+<style>
+  #legalLinks {
+    position: fixed;
+    left: 50%;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 7px 12px;
+    border-radius: 20px;
+    background: rgba(10, 20, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font: 11px Arial, sans-serif;
+    white-space: nowrap;
+  }
+
+  #legalLinks a {
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  #legalLinks a:focus,
+  #legalLinks a:hover {
+    color: #ffd447;
+    text-decoration: underline;
+  }
+</style>
+
+<nav id="legalLinks" aria-label="Legal information">
+  <a href="privacy.html" target="_blank" rel="noopener">
+    Privacy Policy
+  </a>
+  <a href="terms.html" target="_blank" rel="noopener">
+    Terms of Service
+  </a>
+</nav>
+<!-- End legal links -->
 
 </body>
 
