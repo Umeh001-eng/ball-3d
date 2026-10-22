@@ -318,7 +318,7 @@ async function saveScoreToLeaderboard(finalScore){
 
   console.error(err);
 
-  $('saveScoreStatus').textContent='Could not save. Check your internet connection, table columns and Supabase permissions, then try again.';
+ $('saveScoreStatus').textContent='Save failed: '+(error?.message||String(error));
 
   $('saveScoreBtn').textContent='TRY AGAIN';
 
