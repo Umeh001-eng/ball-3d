@@ -983,9 +983,11 @@ function endGame(){
 }
 
 
+
 function showMidgameAd() {
   if (!y8Sdk) {
     console.log("Y8 SDK not yet initialized");
+    beginGame();
     return;
   }
 
@@ -997,14 +999,18 @@ function showMidgameAd() {
     },
     afterAd: () => {
       if (!gameOver && !paused) {
-        running = true;
+        beginGame();
       }
     },
     adBreakDone: (info) => {
       console.log("Y8 ad break:", info.breakStatus);
     }
-  }).catch((e) => console.error(e));
+  }).catch((e) => {
+    console.error(e);
+    if (!gameOver && !paused) beginGame();
+  });
 }
+
 
 
 function beginGame(){
@@ -1361,13 +1367,27 @@ async function enableTilt(){
 
 }
 
-$('startBtn').addEventListener('click',()=>{
 
- if(paused){paused=false;running=true;$('message').classList.add('hidden');$('pauseBtn').textContent='Ⅱ PAUSE';startAudio();lastTime=performance.now();return;}
+$('startBtn').addEventListener('click', () => {
+  if (paused) {
+    paused = false;
+    running = true;
+    $('message').classList.add('hidden');
+    $('pauseBtn').textContent = 'Ⅱ PAUSE';
+    startAudio();
+    lastTime = performance.now();
+    return;
+  }
 
- if(gameOver)resetGame();beginGame();
+  if (gameOver) {
+    resetGame();
+    showMidgameAd();
+    return;
+  }
 
+  beginGame();
 });
+
 
 $('saveScoreBtn').addEventListener('click',()=>saveScoreToLeaderboard(score));
 
