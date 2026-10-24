@@ -982,6 +982,31 @@ function endGame(){
 
 }
 
+
+function showMidgameAd() {
+  if (!y8Sdk) {
+    console.log("Y8 SDK not yet initialized");
+    return;
+  }
+
+  y8Sdk.showAd({
+    type: "next",
+    name: "level-complete",
+    beforeAd: () => {
+      running = false;
+    },
+    afterAd: () => {
+      if (!gameOver && !paused) {
+        running = true;
+      }
+    },
+    adBreakDone: (info) => {
+      console.log("Y8 ad break:", info.breakStatus);
+    }
+  }).catch((e) => console.error(e));
+}
+
+
 function beginGame(){
 
  running=true;paused=false;gameOver=false;$('message').classList.add('hidden');
