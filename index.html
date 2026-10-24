@@ -134,6 +134,34 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 
 </style>
 
+<script src="https://cdn.y8.com/minimal-sdk/2-0/y8.min.js" async></script>
+<script>
+  let y8Sdk;
+
+  window.addEventListener("y8sdk.ready", function () {
+    y8Sdk = y8.sdk();
+
+    const appConfig = {
+      appId: '6adc75dcabe0343702da7aba',
+      autoLogin: true
+    };
+
+    const adConfig = {
+      gameId: '289285',
+      preloadAdBreaks: 'on',
+      sound: 'on',
+      onReady: () => {}
+    };
+
+    y8Sdk.init(appConfig, adConfig);
+    y8Sdk.onAuth((user, error) => {});
+  }, { once: true });
+
+  if (window.y8 && window.y8.emitReadyEvent) {
+    window.y8.emitReadyEvent();
+  }
+</script>
+
 </head>
 
 <body>
